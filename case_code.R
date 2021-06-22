@@ -49,6 +49,9 @@ complete <- merge(complete,cd4_R,by.x="ntisid", by.y="ntisid", all=TRUE)
 complete <- merge(complete,lipid_R,by.x="ntisid", by.y="ntisid", all=TRUE)
 save(complete,file="complete.Rda")
 
+# Half participants in each arm
+kappa <- 0.5
+
 # log(var)  (continuous outcome, weight binary variable)
 # CD4 
 complete$var <- log(complete$cd4)
@@ -75,7 +78,7 @@ pi_10 <- sum(complete$trt=="B" & complete$var_bl<log(cut_bl),na.rm=T)/sum(comple
 pi_20 <- sum(complete$trt=="B" & complete$var_bl>=log(cut_bl),na.rm=T)/sum(complete$trt=="B" & !is.na(complete$var_bl),na.rm=T)  
 
 
-n_ipw <- NULL
+n_IPRW <- NULL
 n_standard <- NULL
 expit_beta_21 <- NULL
 expit_beta_20 <- NULL
@@ -87,29 +90,29 @@ for (expit_beta_11 in seq(0.85,0.95,0.01)) {
     expit_beta_21[i] <- (0.9-pi_11*expit_beta_11)/pi_21
     expit_beta_20[i] <- (0.7-pi_10*expit_beta_10)/pi_20
 
-    eta_ipw <- (pi_11/2)*(sigma_11_sq/expit_beta_11 + (mu_11-mu_1)^2) +
-      (pi_21/2)*(sigma_21_sq/expit_beta_21[i] + (mu_21-mu_1)^2) +
-      (pi_10/2)*(sigma_10_sq/expit_beta_10 + (mu_10-mu_0)^2) +
-      (pi_20/2)*(sigma_20_sq/expit_beta_20[i] + (mu_20-mu_0)^2) 
+    eta_IPRW <- (pi_11/kappa)*(sigma_11_sq/expit_beta_11 + (mu_11-mu_1)^2) +
+                (pi_21/kappa)*(sigma_21_sq/expit_beta_21[i] + (mu_21-mu_1)^2) +
+                (pi_10/(1-kappa))*(sigma_10_sq/expit_beta_10 + (mu_10-mu_0)^2) +
+                (pi_20/(1-kappa))*(sigma_20_sq/expit_beta_20[i] + (mu_20-mu_0)^2) 
 
-    n_ipw[i] <- 4*eta_ipw*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
+    n_IPRW[i] <- eta_IPRW*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
 
     phi <- (pi_11*expit_beta_11 + 
             pi_21*expit_beta_21[i] + 
             pi_10*expit_beta_10 + 
             pi_20*expit_beta_20[i])/2 
 
-    eta_standard <- (pi_11/2)*(sigma_11_sq + (mu_11-mu_1)^2)/phi +
-      (pi_21/2)*(sigma_21_sq + (mu_21-mu_1)^2)/phi +
-      (pi_10/2)*(sigma_10_sq + (mu_10-mu_0)^2)/phi +
-      (pi_20/2)*(sigma_20_sq + (mu_20-mu_0)^2)/phi 
+    eta_standard <- (pi_11/kappa)*(sigma_11_sq + (mu_11-mu_1)^2)/phi +
+                    (pi_21/kappa)*(sigma_21_sq + (mu_21-mu_1)^2)/phi +
+                    (pi_10/(1-kappa))*(sigma_10_sq + (mu_10-mu_0)^2)/phi +
+                    (pi_20/(1-kappa))*(sigma_20_sq + (mu_20-mu_0)^2)/phi 
 
-    n_standard[i] <- 4*eta_standard*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
+    n_standard[i] <- eta_standard*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
   }
 }
 
-max(n_ipw/n_standard)
-min(n_ipw/n_standard)
+max(n_IPRW/n_standard)
+min(n_IPRW/n_standard)
 max(expit_beta_20)
 min(expit_beta_20)
 max(expit_beta_21)
@@ -118,7 +121,7 @@ min(expit_beta_21)
 expit_beta_11 <- (0.9-pi_21*expit_beta_21)/pi_11
 expit_beta_10 <- (0.7-pi_20*expit_beta_20)/pi_10
 
-RE <- n_ipw/n_standard
+RE <- n_IPRW/n_standard
 
 df <- as.data.frame(cbind(expit_beta_11,
                           expit_beta_21,
@@ -156,7 +159,7 @@ sigma_20_sq <- mu_20*(1-mu_20)
 mu_1 <- mean(complete$var[complete$trt=="A"]>log(cut),na.rm=T)
 mu_0 <- mean(complete$var[complete$trt=="B"]>log(cut),na.rm=T)
 
-n_ipw <- NULL
+n_IPRW <- NULL
 n_standard <- NULL
 i <- 0
 for (expit_beta_11 in seq(0.85,0.95,0.01)) {
@@ -166,29 +169,29 @@ for (expit_beta_11 in seq(0.85,0.95,0.01)) {
     expit_beta_21[i] <- (0.9-pi_11*expit_beta_11)/pi_21
     expit_beta_20[i] <- (0.7-pi_10*expit_beta_10)/pi_20
     
-    eta_ipw <- (pi_11/2)*(sigma_11_sq/expit_beta_11 + (mu_11-mu_1)^2) +
-      (pi_21/2)*(sigma_21_sq/expit_beta_21[i] + (mu_21-mu_1)^2) +
-      (pi_10/2)*(sigma_10_sq/expit_beta_10 + (mu_10-mu_0)^2) +
-      (pi_20/2)*(sigma_20_sq/expit_beta_20[i] + (mu_20-mu_0)^2) 
+    eta_IPRW <- (pi_11/kappa)*(sigma_11_sq/expit_beta_11 + (mu_11-mu_1)^2) +
+                (pi_21/kappa)*(sigma_21_sq/expit_beta_21[i] + (mu_21-mu_1)^2) +
+                (pi_10/(1-kappa))*(sigma_10_sq/expit_beta_10 + (mu_10-mu_0)^2) +
+                (pi_20/(1-kappa))*(sigma_20_sq/expit_beta_20[i] + (mu_20-mu_0)^2) 
     
-    n_ipw[i] <- 4*eta_ipw*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
+    n_IPRW[i] <- eta_IPRW*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
     
     phi <- (pi_11*expit_beta_11 + 
-              pi_21*expit_beta_21[i] + 
-              pi_10*expit_beta_10 + 
-              pi_20*expit_beta_20[i])/2 
+            pi_21*expit_beta_21[i] + 
+            pi_10*expit_beta_10 + 
+            pi_20*expit_beta_20[i])/2 
     
-    eta_standard <- (pi_11/2)*(sigma_11_sq + (mu_11-mu_1)^2)/phi +
-      (pi_21/2)*(sigma_21_sq + (mu_21-mu_1)^2)/phi +
-      (pi_10/2)*(sigma_10_sq + (mu_10-mu_0)^2)/phi +
-      (pi_20/2)*(sigma_20_sq + (mu_20-mu_0)^2)/phi 
+    eta_standard <- (pi_11/kappa)*(sigma_11_sq + (mu_11-mu_1)^2)/phi +
+                    (pi_21/kappa)*(sigma_21_sq + (mu_21-mu_1)^2)/phi +
+                    (pi_10/(1-kappa))*(sigma_10_sq + (mu_10-mu_0)^2)/phi +
+                    (pi_20/(1-kappa))*(sigma_20_sq + (mu_20-mu_0)^2)/phi 
     
-    n_standard[i] <- 4*eta_standard*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
+    n_standard[i] <- eta_standard*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
   }
 }
 
-max(n_ipw/n_standard)
-min(n_ipw/n_standard)
+max(n_IPRW/n_standard)
+min(n_IPRW/n_standard)
 max(expit_beta_20)
 min(expit_beta_20)
 max(expit_beta_21)
@@ -197,7 +200,7 @@ min(expit_beta_21)
 expit_beta_11 <- (0.9-pi_21*expit_beta_21)/pi_11
 expit_beta_10 <- (0.7-pi_20*expit_beta_20)/pi_10
 
-RE <- n_ipw/n_standard
+RE <- n_IPRW/n_standard
 
 df <- as.data.frame(cbind(expit_beta_11,
                           expit_beta_21,
@@ -222,7 +225,7 @@ b1 <- b +
 
 
 # log(var)>log(cut)  (binary outcome, logit link, weight binary variable)
-n_ipw <- NULL
+n_IPRW <- NULL
 n_standard <- NULL
 i <- 0
 for (expit_beta_11 in seq(0.85,0.95,0.01)) {
@@ -232,29 +235,29 @@ for (expit_beta_11 in seq(0.85,0.95,0.01)) {
     expit_beta_21[i] <- (0.9-pi_11*expit_beta_11)/pi_21
     expit_beta_20[i] <- (0.7-pi_10*expit_beta_10)/pi_20
     
-    eta_ipw <- (pi_11/(2*(mu_11*(1-mu_11))^2))*(sigma_11_sq/expit_beta_11 + (mu_11-mu_1)^2) +
-      (pi_21/(2*(mu_21*(1-mu_21))^2))*(sigma_21_sq/expit_beta_21[i] + (mu_21-mu_1)^2) +
-      (pi_10/(2*(mu_10*(1-mu_10))^2))*(sigma_10_sq/expit_beta_10 + (mu_10-mu_0)^2) +
-      (pi_20/(2*(mu_20*(1-mu_20))^2))*(sigma_20_sq/expit_beta_20[i] + (mu_20-mu_0)^2) 
+    eta_IPRW <- (pi_11/(kappa*(mu_11*(1-mu_11))^2))*(sigma_11_sq/expit_beta_11 + (mu_11-mu_1)^2) +
+                (pi_21/(kappa*(mu_21*(1-mu_21))^2))*(sigma_21_sq/expit_beta_21[i] + (mu_21-mu_1)^2) +
+                (pi_10/((1-kappa)*(mu_10*(1-mu_10))^2))*(sigma_10_sq/expit_beta_10 + (mu_10-mu_0)^2) +
+                (pi_20/((1-kappa)*(mu_20*(1-mu_20))^2))*(sigma_20_sq/expit_beta_20[i] + (mu_20-mu_0)^2) 
     
-    n_ipw[i] <- 4*eta_ipw*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
+    n_IPRW[i] <- eta_IPRW*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
     
     phi <- (pi_11*expit_beta_11 + 
-              pi_21*expit_beta_21[i] + 
-              pi_10*expit_beta_10 + 
-              pi_20*expit_beta_20[i])/2 
+            pi_21*expit_beta_21[i] + 
+            pi_10*expit_beta_10 + 
+            pi_20*expit_beta_20[i])/2 
     
-    eta_standard <- (pi_11/(2*(mu_11*(1-mu_11))^2))*(sigma_11_sq + (mu_11-mu_1)^2)/phi +
-      (pi_21/(2*(mu_21*(1-mu_21))^2))*(sigma_21_sq + (mu_21-mu_1)^2)/phi +
-      (pi_10/(2*(mu_10*(1-mu_10))^2))*(sigma_10_sq + (mu_10-mu_0)^2)/phi +
-      (pi_20/(2*(mu_20*(1-mu_20))^2))*(sigma_20_sq + (mu_20-mu_0)^2)/phi 
+    eta_standard <- (pi_11/(kappa*(mu_11*(1-mu_11))^2))*(sigma_11_sq + (mu_11-mu_1)^2)/phi +
+                    (pi_21/(kappa*(mu_21*(1-mu_21))^2))*(sigma_21_sq + (mu_21-mu_1)^2)/phi +
+                    (pi_10/((1-kappa)*(mu_10*(1-mu_10))^2))*(sigma_10_sq + (mu_10-mu_0)^2)/phi +
+                    (pi_20/((1-kappa)*(mu_20*(1-mu_20))^2))*(sigma_20_sq + (mu_20-mu_0)^2)/phi 
     
-    n_standard[i] <- 4*eta_standard*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
+    n_standard[i] <- eta_standard*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
   }
 }
 
-max(n_ipw/n_standard)
-min(n_ipw/n_standard)
+max(n_IPRW/n_standard)
+min(n_IPRW/n_standard)
 max(expit_beta_20)
 min(expit_beta_20)
 max(expit_beta_21)
@@ -263,7 +266,7 @@ min(expit_beta_21)
 expit_beta_11 <- (0.9-pi_21*expit_beta_21)/pi_11
 expit_beta_10 <- (0.7-pi_20*expit_beta_20)/pi_10
 
-RE <- n_ipw/n_standard
+RE <- n_IPRW/n_standard
 
 df <- as.data.frame(cbind(expit_beta_11,
                           expit_beta_21,
@@ -306,7 +309,7 @@ to_opt_control  <- function(beta_10,x,sigma_x_sq,mu_x) {
     abs(sum(plogis(x+(sqrt(2)*sqrt(sigma_x_sq)*x_j+mu_x)*beta_10)*w_j)/sqrt(pi)
         -0.7))
 }
-eta_ipw <- NULL
+eta_IPRW <- NULL
 beta_00_out <- NULL
 beta_10_out <- NULL
 beta_01_out <- NULL
@@ -337,17 +340,17 @@ for (beta_10 in seq(-1.4,1.4,0.1)) {
                 sum(plogis(beta_00+beta_01*(sqrt(2*sigma_x_sq)*x_j+mu_x))*(1-plogis(beta_00+beta_01*(sqrt(2*sigma_x_sq)*x_j+mu_x)))*(sqrt(2*sigma_x_sq)*x_j+mu_x)),
                 sum(plogis(beta_00+beta_01*(sqrt(2*sigma_x_sq)*x_j+mu_x))*(1-plogis(beta_00+beta_01*(sqrt(2*sigma_x_sq)*x_j+mu_x)))*(sqrt(2*sigma_x_sq)*x_j+mu_x)^2)),
               byrow=T,ncol=2,nrow=2)
-    eta_ipw[i] <- sigma_y_sq*(1+exp(-mu_x*beta_11^2+beta_11^2*sigma_x_sq/2-beta_01)*(1+rho^2*sigma_x_sq*beta_11^2)/2+
-                         exp(-mu_x*beta_10^2+beta_10^2*sigma_x_sq/2-beta_00)*(1+rho^2*sigma_x_sq*beta_10^2)/2-
-                         2*rho^2*t(C_1)%*%solve(D_1)%*%C_1 - 2*rho^2*t(C_0)%*%solve(D_0)%*%C_0) 
+    eta_IPRW[i] <- sigma_y_sq*(1/kappa+exp(-mu_x*beta_11^2+beta_11^2*sigma_x_sq/2-beta_01)*(1+rho^2*sigma_x_sq*beta_11^2)/kappa+
+                               1/(1-kappa)+exp(-mu_x*beta_10^2+beta_10^2*sigma_x_sq/2-beta_00)*(1+rho^2*sigma_x_sq*beta_10^2)/(1-kappa)-
+                               rho^2*t(C_1)%*%solve(D_1)%*%C_1/kappa - rho^2*t(C_0)%*%solve(D_0)%*%C_0/(1-kappa)) 
     beta_00_out[i] <- beta_00
     beta_10_out[i] <- beta_10
     beta_01_out[i] <- beta_01
     beta_11_out[i] <- beta_11
   }
 }
-eta_standard <- sigma_y_sq/0.8
-RE <- eta_ipw/eta_standard
+eta_standard <- sigma_y_sq/(0.8*kappa*(1-kappa))
+RE <- eta_IPRW/eta_standard
 RE
 
 df <- as.data.frame(cbind(beta_11_out,
@@ -361,7 +364,7 @@ d <- ggplot(df, aes(x, y, z=z)) + stat_contour(aes(colour = factor(stat(level)))
 data<- ggplot_build(d)$data[[1]] 
 indices <- setdiff(1:nrow(data), which(duplicated(data$level))) # distinct levels
 d1 <- d + 
-  geom_text(aes(label=seq(0.2,1.6,by=0.2), z=NULL), size=2, data=data[indices,]) +
+  geom_text(aes(label=seq(0.7,1.6,by=0.1), z=NULL), size=2, data=data[indices,]) +
   xlab(TeX("$\\beta_{11}$")) +
   scale_x_continuous(sec.axis = sec_axis(~ exp(.),name=TeX("exp$(\\beta_{11})$"),
                                          breaks=c(0.25,0.5,1,2,4))) +
@@ -373,7 +376,7 @@ d1 <- d +
 
 out <- ggarrange(b1,c1,a1,d1,
           nrow=2,ncol=2)
-annotate_figure(out,top = text_grob(TeX("CD4, Relative Efficiency: $\\eta_{IPW}/\\eta_{standard}$"), face = "bold", size = 12))
+annotate_figure(out,top = text_grob(TeX("CD4, Relative Efficiency: $\\eta_{IPRW}/\\eta_{standard}$"), face = "bold", size = 12))
 ggsave("IRT_cd4.pdf", width = 7, height = 7)
 
 
@@ -402,7 +405,7 @@ pi_10 <- sum(complete$trt=="B" & complete$var_bl<log(cut_bl),na.rm=T)/sum(comple
 pi_20 <- sum(complete$trt=="B" & complete$var_bl>=log(cut_bl),na.rm=T)/sum(complete$trt=="B" & !is.na(complete$var_bl),na.rm=T)  
 
 
-n_ipw <- NULL
+n_IPRW <- NULL
 n_standard <- NULL
 expit_beta_21 <- NULL
 expit_beta_20 <- NULL
@@ -414,29 +417,29 @@ for (expit_beta_11 in seq(0.85,0.95,0.01)) {
     expit_beta_21[i] <- (0.9-pi_11*expit_beta_11)/pi_21
     expit_beta_20[i] <- (0.7-pi_10*expit_beta_10)/pi_20
     
-    eta_ipw <- (pi_11/2)*(sigma_11_sq/expit_beta_11 + (mu_11-mu_1)^2) +
-      (pi_21/2)*(sigma_21_sq/expit_beta_21[i] + (mu_21-mu_1)^2) +
-      (pi_10/2)*(sigma_10_sq/expit_beta_10 + (mu_10-mu_0)^2) +
-      (pi_20/2)*(sigma_20_sq/expit_beta_20[i] + (mu_20-mu_0)^2) 
+    eta_IPRW <- (pi_11/kappa)*(sigma_11_sq/expit_beta_11 + (mu_11-mu_1)^2) +
+                (pi_21/kappa)*(sigma_21_sq/expit_beta_21[i] + (mu_21-mu_1)^2) +
+                (pi_10/(1-kappa))*(sigma_10_sq/expit_beta_10 + (mu_10-mu_0)^2) +
+                (pi_20/(1-kappa))*(sigma_20_sq/expit_beta_20[i] + (mu_20-mu_0)^2) 
     
-    n_ipw[i] <- 4*eta_ipw*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
+    n_IPRW[i] <- eta_IPRW*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
     
     phi <- (pi_11*expit_beta_11 + 
-              pi_21*expit_beta_21[i] + 
-              pi_10*expit_beta_10 + 
-              pi_20*expit_beta_20[i])/2 
+            pi_21*expit_beta_21[i] + 
+            pi_10*expit_beta_10 + 
+            pi_20*expit_beta_20[i])/2 
     
-    eta_standard <- (pi_11/2)*(sigma_11_sq + (mu_11-mu_1)^2)/phi +
-      (pi_21/2)*(sigma_21_sq + (mu_21-mu_1)^2)/phi +
-      (pi_10/2)*(sigma_10_sq + (mu_10-mu_0)^2)/phi +
-      (pi_20/2)*(sigma_20_sq + (mu_20-mu_0)^2)/phi 
+    eta_standard <- (pi_11/kappa)*(sigma_11_sq + (mu_11-mu_1)^2)/phi +
+                    (pi_21/kappa)*(sigma_21_sq + (mu_21-mu_1)^2)/phi +
+                    (pi_10/(1-kappa))*(sigma_10_sq + (mu_10-mu_0)^2)/phi +
+                    (pi_20/(1-kappa))*(sigma_20_sq + (mu_20-mu_0)^2)/phi 
     
-    n_standard[i] <- 4*eta_standard*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
+    n_standard[i] <- eta_standard*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
   }
 }
 
-max(n_ipw/n_standard)
-min(n_ipw/n_standard)
+max(n_IPRW/n_standard)
+min(n_IPRW/n_standard)
 max(expit_beta_20)
 min(expit_beta_20)
 max(expit_beta_21)
@@ -445,7 +448,7 @@ min(expit_beta_21)
 expit_beta_11 <- (0.9-pi_21*expit_beta_21)/pi_11
 expit_beta_10 <- (0.7-pi_20*expit_beta_20)/pi_10
 
-RE <- n_ipw/n_standard
+RE <- n_IPRW/n_standard
 
 df <- as.data.frame(cbind(expit_beta_11,
                           expit_beta_21,
@@ -483,7 +486,7 @@ sigma_20_sq <- mu_20*(1-mu_20)
 mu_1 <- mean(complete$var[complete$trt=="A"]>log(cut),na.rm=T)
 mu_0 <- mean(complete$var[complete$trt=="B"]>log(cut),na.rm=T)
 
-n_ipw <- NULL
+n_IPRW <- NULL
 n_standard <- NULL
 i <- 0
 for (expit_beta_11 in seq(0.85,0.95,0.01)) {
@@ -493,29 +496,29 @@ for (expit_beta_11 in seq(0.85,0.95,0.01)) {
     expit_beta_21[i] <- (0.9-pi_11*expit_beta_11)/pi_21
     expit_beta_20[i] <- (0.7-pi_10*expit_beta_10)/pi_20
     
-    eta_ipw <- (pi_11/2)*(sigma_11_sq/expit_beta_11 + (mu_11-mu_1)^2) +
-      (pi_21/2)*(sigma_21_sq/expit_beta_21[i] + (mu_21-mu_1)^2) +
-      (pi_10/2)*(sigma_10_sq/expit_beta_10 + (mu_10-mu_0)^2) +
-      (pi_20/2)*(sigma_20_sq/expit_beta_20[i] + (mu_20-mu_0)^2) 
+    eta_IPRW <- (pi_11/kappa)*(sigma_11_sq/expit_beta_11 + (mu_11-mu_1)^2) +
+                (pi_21/kappa)*(sigma_21_sq/expit_beta_21[i] + (mu_21-mu_1)^2) +
+                (pi_10/(1-kappa))*(sigma_10_sq/expit_beta_10 + (mu_10-mu_0)^2) +
+                (pi_20/(1-kappa))*(sigma_20_sq/expit_beta_20[i] + (mu_20-mu_0)^2) 
     
-    n_ipw[i] <- 4*eta_ipw*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
+    n_IPRW[i] <- eta_IPRW*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
     
     phi <- (pi_11*expit_beta_11 + 
-              pi_21*expit_beta_21[i] + 
-              pi_10*expit_beta_10 + 
-              pi_20*expit_beta_20[i])/2 
+            pi_21*expit_beta_21[i] + 
+            pi_10*expit_beta_10 + 
+            pi_20*expit_beta_20[i])/2 
     
-    eta_standard <- (pi_11/2)*(sigma_11_sq + (mu_11-mu_1)^2)/phi +
-      (pi_21/2)*(sigma_21_sq + (mu_21-mu_1)^2)/phi +
-      (pi_10/2)*(sigma_10_sq + (mu_10-mu_0)^2)/phi +
-      (pi_20/2)*(sigma_20_sq + (mu_20-mu_0)^2)/phi 
+    eta_standard <- (pi_11/kappa)*(sigma_11_sq + (mu_11-mu_1)^2)/phi +
+                    (pi_21/kappa)*(sigma_21_sq + (mu_21-mu_1)^2)/phi +
+                    (pi_10/(1-kappa))*(sigma_10_sq + (mu_10-mu_0)^2)/phi +
+                    (pi_20/(1-kappa))*(sigma_20_sq + (mu_20-mu_0)^2)/phi 
     
-    n_standard[i] <- 4*eta_standard*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
+    n_standard[i] <- eta_standard*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
   }
 }
 
-max(n_ipw/n_standard)
-min(n_ipw/n_standard)
+max(n_IPRW/n_standard)
+min(n_IPRW/n_standard)
 max(expit_beta_20)
 min(expit_beta_20)
 max(expit_beta_21)
@@ -524,7 +527,7 @@ min(expit_beta_21)
 expit_beta_11 <- (0.9-pi_21*expit_beta_21)/pi_11
 expit_beta_10 <- (0.7-pi_20*expit_beta_20)/pi_10
 
-RE <- n_ipw/n_standard
+RE <- n_IPRW/n_standard
 
 df <- as.data.frame(cbind(expit_beta_11,
                           expit_beta_21,
@@ -548,7 +551,7 @@ b1 <- b +
   ggtitle(TeX("C. $Y_i$ binary, $g$ identity, $X_i$ categorical"))
 
 # log(var)>log(cut)  (binary outcome, logit link, weight binary variable)
-n_ipw <- NULL
+n_IPRW <- NULL
 n_standard <- NULL
 i <- 0
 for (expit_beta_11 in seq(0.85,0.95,0.01)) {
@@ -558,29 +561,29 @@ for (expit_beta_11 in seq(0.85,0.95,0.01)) {
     expit_beta_21[i] <- (0.9-pi_11*expit_beta_11)/pi_21
     expit_beta_20[i] <- (0.7-pi_10*expit_beta_10)/pi_20
     
-    eta_ipw <- (pi_11/(2*(mu_11*(1-mu_11))^2))*(sigma_11_sq/expit_beta_11 + (mu_11-mu_1)^2) +
-      (pi_21/(2*(mu_21*(1-mu_21))^2))*(sigma_21_sq/expit_beta_21[i] + (mu_21-mu_1)^2) +
-      (pi_10/(2*(mu_10*(1-mu_10))^2))*(sigma_10_sq/expit_beta_10 + (mu_10-mu_0)^2) +
-      (pi_20/(2*(mu_20*(1-mu_20))^2))*(sigma_20_sq/expit_beta_20[i] + (mu_20-mu_0)^2) 
+    eta_IPRW <- (pi_11/(kappa*(mu_11*(1-mu_11))^2))*(sigma_11_sq/expit_beta_11 + (mu_11-mu_1)^2) +
+                (pi_21/(kappa*(mu_21*(1-mu_21))^2))*(sigma_21_sq/expit_beta_21[i] + (mu_21-mu_1)^2) +
+                (pi_10/((1-kappa)*(mu_10*(1-mu_10))^2))*(sigma_10_sq/expit_beta_10 + (mu_10-mu_0)^2) +
+                (pi_20/((1-kappa)*(mu_20*(1-mu_20))^2))*(sigma_20_sq/expit_beta_20[i] + (mu_20-mu_0)^2) 
     
-    n_ipw[i] <- 4*eta_ipw*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
+    n_IPRW[i] <- eta_IPRW*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
     
     phi <- (pi_11*expit_beta_11 + 
-              pi_21*expit_beta_21[i] + 
-              pi_10*expit_beta_10 + 
-              pi_20*expit_beta_20[i])/2 
+            pi_21*expit_beta_21[i] + 
+            pi_10*expit_beta_10 + 
+            pi_20*expit_beta_20[i])/2 
     
-    eta_standard <- (pi_11/(2*(mu_11*(1-mu_11))^2))*(sigma_11_sq + (mu_11-mu_1)^2)/phi +
-      (pi_21/(2*(mu_21*(1-mu_21))^2))*(sigma_21_sq + (mu_21-mu_1)^2)/phi +
-      (pi_10/(2*(mu_10*(1-mu_10))^2))*(sigma_10_sq + (mu_10-mu_0)^2)/phi +
-      (pi_20/(2*(mu_20*(1-mu_20))^2))*(sigma_20_sq + (mu_20-mu_0)^2)/phi 
+    eta_standard <- (pi_11/(kappa*(mu_11*(1-mu_11))^2))*(sigma_11_sq + (mu_11-mu_1)^2)/phi +
+                    (pi_21/(kappa*(mu_21*(1-mu_21))^2))*(sigma_21_sq + (mu_21-mu_1)^2)/phi +
+                    (pi_10/((1-kappa)*(mu_10*(1-mu_10))^2))*(sigma_10_sq + (mu_10-mu_0)^2)/phi +
+                    (pi_20/((1-kappa)*(mu_20*(1-mu_20))^2))*(sigma_20_sq + (mu_20-mu_0)^2)/phi 
     
-    n_standard[i] <- 4*eta_standard*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
+    n_standard[i] <- eta_standard*(qnorm(0.9)+qnorm(0.975))^2/(10^2) 
   }
 }
 
-max(n_ipw/n_standard)
-min(n_ipw/n_standard)
+max(n_IPRW/n_standard)
+min(n_IPRW/n_standard)
 max(expit_beta_20)
 min(expit_beta_20)
 max(expit_beta_21)
@@ -589,7 +592,7 @@ min(expit_beta_21)
 expit_beta_11 <- (0.9-pi_21*expit_beta_21)/pi_11
 expit_beta_10 <- (0.7-pi_20*expit_beta_20)/pi_10
 
-RE <- n_ipw/n_standard
+RE <- n_IPRW/n_standard
 
 df <- as.data.frame(cbind(expit_beta_11,
                           expit_beta_21,
@@ -632,7 +635,7 @@ to_opt_control  <- function(beta_10,x,sigma_x_sq,mu_x) {
     abs(sum(plogis(x+(sqrt(2)*sqrt(sigma_x_sq)*x_j+mu_x)*beta_10)*w_j)/sqrt(pi)
         -0.7))
 }
-eta_ipw <- NULL
+eta_IPRW <- NULL
 beta_00_out <- NULL
 beta_10_out <- NULL
 beta_01_out <- NULL
@@ -663,17 +666,17 @@ for (beta_10 in seq(-1.4,1.4,0.1)) {
                     sum(plogis(beta_00+beta_01*(sqrt(2*sigma_x_sq)*x_j+mu_x))*(1-plogis(beta_00+beta_01*(sqrt(2*sigma_x_sq)*x_j+mu_x)))*(sqrt(2*sigma_x_sq)*x_j+mu_x)),
                     sum(plogis(beta_00+beta_01*(sqrt(2*sigma_x_sq)*x_j+mu_x))*(1-plogis(beta_00+beta_01*(sqrt(2*sigma_x_sq)*x_j+mu_x)))*(sqrt(2*sigma_x_sq)*x_j+mu_x)^2)),
                   byrow=T,ncol=2,nrow=2)
-    eta_ipw[i] <- sigma_y_sq*(1+exp(-mu_x*beta_11^2+beta_11^2*sigma_x_sq/2-beta_01)*(1+rho^2*sigma_x_sq*beta_11^2)/2+
-                                exp(-mu_x*beta_10^2+beta_10^2*sigma_x_sq/2-beta_00)*(1+rho^2*sigma_x_sq*beta_10^2)/2-
-                                2*rho^2*t(C_1)%*%solve(D_1)%*%C_1 - 2*rho^2*t(C_0)%*%solve(D_0)%*%C_0) 
+    eta_IPRW[i] <- sigma_y_sq*(1/kappa+exp(-mu_x*beta_11^2+beta_11^2*sigma_x_sq/2-beta_01)*(1+rho^2*sigma_x_sq*beta_11^2)/kappa+
+                               1/(1-kappa)+exp(-mu_x*beta_10^2+beta_10^2*sigma_x_sq/2-beta_00)*(1+rho^2*sigma_x_sq*beta_10^2)/(1-kappa)-
+                               rho^2*t(C_1)%*%solve(D_1)%*%C_1/kappa - rho^2*t(C_0)%*%solve(D_0)%*%C_0/(1-kappa)) 
     beta_00_out[i] <- beta_00
     beta_10_out[i] <- beta_10
     beta_01_out[i] <- beta_01
     beta_11_out[i] <- beta_11
   }
 }
-eta_standard <- sigma_y_sq/0.8
-RE <- eta_ipw/eta_standard
+eta_standard <- sigma_y_sq/(0.8*kappa*(1-kappa))
+RE <- eta_IPRW/eta_standard
 RE
 
 df <- as.data.frame(cbind(beta_11_out,
@@ -687,7 +690,7 @@ d <- ggplot(df, aes(x, y, z=z)) + stat_contour(aes(colour = factor(stat(level)))
 data<- ggplot_build(d)$data[[1]] 
 indices <- setdiff(1:nrow(data), which(duplicated(data$level))) # distinct levels
 d1 <- d + 
-  geom_text(aes(label=seq(0.7,1.5,by=0.1), z=NULL), size=2, data=data[indices,]) +
+  geom_text(aes(label=seq(0.8,1.5,by=0.1), z=NULL), size=2, data=data[indices,]) +
   xlab(TeX("$\\beta_{11}$")) +
   scale_x_continuous(sec.axis = sec_axis(~ exp(.),name=TeX("exp$(\\beta_{11})$"),
                                          breaks=c(0.25,0.5,1,2,4))) +
@@ -699,7 +702,7 @@ d1 <- d +
 
 out <- ggarrange(b1,c1,a1,d1,
                  nrow=2,ncol=2)
-annotate_figure(out,top = text_grob(TeX("Triglyceride, Relative Efficiency: $\\eta_{IPW}/\\eta_{standard}$"), face = "bold", size = 12))
+annotate_figure(out,top = text_grob(TeX("Triglyceride, Relative Efficiency: $\\eta_{IPRW}/\\eta_{standard}$"), face = "bold", size = 12))
 ggsave("IRT_triglyceride.pdf", width = 7, height = 7)
 
 

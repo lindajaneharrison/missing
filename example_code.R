@@ -57,7 +57,7 @@ for (i in 1:max(keep$new_id)){
 }
 delta <- sum(clust_sum)/sum(clust_size)
 
-# Estimate all other parameters for eta_ipw
+# Estimate all other parameters for eta_IPRW
 pi_11 <- sum(keep$X & keep$Z)/sum(keep$Z)
 pi_21 <- sum((1-keep$X) & keep$Z)/sum(keep$Z)
 pi_10 <- sum(keep$X & (1-keep$Z))/sum(1-keep$Z)
@@ -73,14 +73,15 @@ expit_beta_20 <- mean(keep$R[(1-keep$X) & (1-keep$Z)])
 c(pi_11,pi_21,pi_10,pi_20,expit_beta_11,expit_beta_21,expit_beta_10,expit_beta_20,
   mu_11,mu_21,mu_10,mu_20,mu_1_hat,mu_0_hat,delta,lOR)
 
-# Perform the sample size calculation
-eta_ipw <- (pi_11/2)*(mu_11*(1-mu_11)/(expit_beta_11*(mu_1_hat*(1-mu_1_hat))^2) + (mu_11*(1-mu_11)/(mu_1_hat*(1-mu_1_hat)))^2) +
-           (pi_21/2)*(mu_21*(1-mu_21)/(expit_beta_21*(mu_1_hat*(1-mu_1_hat))^2) + (mu_21*(1-mu_21)/(mu_1_hat*(1-mu_1_hat)))^2) +
-           (pi_10/2)*(mu_10*(1-mu_10)/(expit_beta_10*(mu_0_hat*(1-mu_0_hat))^2) + (mu_10*(1-mu_10)/(mu_0_hat*(1-mu_0_hat)))^2) +
-           (pi_20/2)*(mu_20*(1-mu_20)/(expit_beta_20*(mu_0_hat*(1-mu_0_hat))^2) + (mu_20*(1-mu_20)/(mu_0_hat*(1-mu_0_hat)))^2) +
-           (6-1)*delta*((1/(2*mu_1_hat*(1-mu_1_hat)))+(1/(2*mu_0_hat*(1-mu_0_hat))))
-eta_ipw
-sample_size <- 4*eta_ipw*(qnorm(0.9)+qnorm(0.975))^2/((qlogis(mu_1_hat)-qlogis(mu_0_hat))^2)
+# Perform the sample size calculation for the comfirmatory cluster randomized trial
+kappa <- 1/2
+eta_IPRW <- (pi_11/(kappa*(mu_1_hat*(1-mu_1_hat))^2))*(mu_11*(1-mu_11)/expit_beta_11+(mu_11-mu_1_hat)^2) +
+            (pi_21/(kappa*(mu_1_hat*(1-mu_1_hat))^2))*(mu_21*(1-mu_21)/expit_beta_21+(mu_21-mu_1_hat)^2) +
+            (pi_10/((1-kappa)*(mu_0_hat*(1-mu_0_hat))^2))*(mu_10*(1-mu_10)/expit_beta_10+(mu_10-mu_0_hat)^2) +
+            (pi_20/((1-kappa)*(mu_0_hat*(1-mu_0_hat))^2))*(mu_20*(1-mu_20)/expit_beta_20+(mu_20-mu_0_hat)^2) +
+            (6-1)*delta*((1/(kappa*mu_1_hat*(1-mu_1_hat)))+(1/((1-kappa)*mu_0_hat*(1-mu_0_hat))))
+eta_IPRW
+sample_size <- eta_IPRW*(qnorm(0.9)+qnorm(0.975))^2/((qlogis(mu_1_hat)-qlogis(mu_0_hat))^2)
 # Number of individuals
 sample_size
 # Number of clusters
