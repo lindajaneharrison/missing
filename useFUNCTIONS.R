@@ -1,24 +1,24 @@
-# R functions (Sample Size Calculation for Randomized Clinical Trials when Data are Missing at Random)
+# R functions (Sample Size Calculation for Randomized Clinical Trials when Outcome Data are Missing at Random)
 
 # Sample Size Calculation Functions
 
 # Standard
-n_standard <- function(power,alpha,mu_1,mu_0,type,link,sigma_y_sq=NULL,phi,
+n_standard <- function(power,alpha,kappa,mu_1,mu_0,type,link,sigma_y_sq=NULL,phi,
                        delta=NULL,m=NULL)
 {
   if (type=="continuous" && link=="identity") {
-    eta_standard <- sigma_y_sq/phi
-    n_standard <- 4*eta_standard*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
+    eta_standard <- sigma_y_sq/(phi*kappa*(1-kappa))
+    n_standard <- eta_standard*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
   }
   if (type=="binary") {
     if (!is.null(sigma_y_sq)) {print("sigma_y_sq should not be specified when type is binary")}
     if (link=="identity") {
-      eta_standard <- (mu_1*(1-mu_1)+mu_0*(1-mu_0))/(2*phi)
-      n_standard <- 4*eta_standard*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
+      eta_standard <- (mu_1*(1-mu_1)/kappa+mu_0*(1-mu_0)/(1-kappa))/phi
+      n_standard <- eta_standard*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
     }
     if (link=="logit") {
-      eta_standard <- (1/(mu_1*(1-mu_1))+1/(mu_0*(1-mu_0)))/(2*phi)
-      n_standard <- 4*eta_standard*(qnorm(power)+qnorm(1-alpha/2))^2/(qlogis(mu_1)-qlogis(mu_0))^2
+      eta_standard <- (1/(kappa*mu_1*(1-mu_1))+1/((1-kappa)*mu_0*(1-mu_0)))/phi
+      n_standard <- eta_standard*(qnorm(power)+qnorm(1-alpha/2))^2/(qlogis(mu_1)-qlogis(mu_0))^2
     }
   }
   if (!is.null(delta)) {
@@ -28,7 +28,7 @@ n_standard <- function(power,alpha,mu_1,mu_0,type,link,sigma_y_sq=NULL,phi,
 }
 
 # Weighting for a fully observed auxiliary categorical variable
-n_IPW_cat <- function(power,alpha,mu_1,mu_0,
+n_IPRW_cat <- function(power,alpha,kappa,mu_1,mu_0,
                   mu_11,mu_10,mu_21,mu_20,
                   type,link,
                   sigma_11_sq=NULL,sigma_10_sq=NULL,sigma_21_sq=NULL,sigma_20_sq=NULL,
@@ -37,46 +37,46 @@ n_IPW_cat <- function(power,alpha,mu_1,mu_0,
                   delta=NULL,m=NULL)
 {
   if (type=="continuous" && link=="identity") {
-    eta_IPW <- (pi_11/2)*(sigma_11_sq/expit_beta_11+(mu_11-mu_1)^2) +
-               (pi_10/2)*(sigma_10_sq/expit_beta_10+(mu_10-mu_0)^2) +
-               (pi_21/2)*(sigma_21_sq/expit_beta_21+(mu_21-mu_1)^2) +
-               (pi_20/2)*(sigma_20_sq/expit_beta_20+(mu_20-mu_0)^2) 
+    eta_IPRW <- (pi_11/kappa)*(sigma_11_sq/expit_beta_11+(mu_11-mu_1)^2) +
+                (pi_10/(1-kappa))*(sigma_10_sq/expit_beta_10+(mu_10-mu_0)^2) +
+                (pi_21/kappa)*(sigma_21_sq/expit_beta_21+(mu_21-mu_1)^2) +
+                (pi_20/(1-kappa))*(sigma_20_sq/expit_beta_20+(mu_20-mu_0)^2) 
     if (!is.null(delta)) {
-      sigma_y_sq <- (pi_11*(sigma_11_sq+(mu_11-mu_1)^2)+pi_21*(sigma_21_sq+(mu_21-mu_1)^2) +
-                    pi_10*(sigma_10_sq+(mu_10-mu_0)^2)+pi_20*(sigma_20_sq+(mu_20-mu_0)^2))/2 
-      eta_IPW <- eta_IPW + (m-1)*delta*sigma_y_sq
+      sigma_y_sq <- (pi_11*(sigma_11_sq+(mu_11-mu_1)^2)+pi_21*(sigma_21_sq+(mu_21-mu_1)^2))*kappa +
+                    (pi_10*(sigma_10_sq+(mu_10-mu_0)^2)+pi_20*(sigma_20_sq+(mu_20-mu_0)^2))*(1-kappa)
+      eta_IPRW <- eta_IPRW + (m-1)*delta*sigma_y_sq/(kappa*(1-kappa))
     }
-    n_IPW <- 4*eta_IPW*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
+    n_IPRW <- eta_IPRW*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
   }
   if (type=="binary") {
     if (!is.null(sigma_11_sq)) {print("sigma_sq variables should not be specified when type is binary")}
     if (link=="identity") {
-      eta_IPW <- (pi_11/2)*(mu_11*(1-mu_11)/expit_beta_11+(mu_11-mu_1)^2) +
-                 (pi_10/2)*(mu_10*(1-mu_10)/expit_beta_10+(mu_10-mu_0)^2) +
-                 (pi_21/2)*(mu_21*(1-mu_21)/expit_beta_21+(mu_21-mu_1)^2) +
-                 (pi_20/2)*(mu_20*(1-mu_20)/expit_beta_20+(mu_20-mu_0)^2) 
+      eta_IPRW <- (pi_11/kappa)*(mu_11*(1-mu_11)/expit_beta_11+(mu_11-mu_1)^2) +
+                  (pi_10/(1-kappa))*(mu_10*(1-mu_10)/expit_beta_10+(mu_10-mu_0)^2) +
+                  (pi_21/kappa)*(mu_21*(1-mu_21)/expit_beta_21+(mu_21-mu_1)^2) +
+                  (pi_20/(1-kappa))*(mu_20*(1-mu_20)/expit_beta_20+(mu_20-mu_0)^2) 
       if (!is.null(delta)) {
-        sigma_y_sq <- (mu_1*(1-mu_1)+mu_0*(1-mu_0))/2
-        eta_IPW <- eta_IPW + (m-1)*delta*sigma_y_sq
+        sigma_y_sq <- mu_1*(1-mu_1)/kappa+mu_0*(1-mu_0)/(1-kappa)
+        eta_IPRW <- eta_IPRW + (m-1)*delta*sigma_y_sq
       }
-      n_IPW <- 4*eta_IPW*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
+      n_IPRW <- eta_IPRW*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
     }
     if (link=="logit") {
-      eta_IPW <- (pi_11/2)*(mu_11*(1-mu_11)/(expit_beta_11*(mu_1*(1-mu_1))^2)+((mu_11-mu_1)/(mu_1*(1-mu_1)))^2) +
-                 (pi_10/2)*(mu_10*(1-mu_10)/(expit_beta_10*(mu_0*(1-mu_0))^2)+((mu_10-mu_0)/(mu_0*(1-mu_0)))^2) +
-                 (pi_21/2)*(mu_21*(1-mu_21)/(expit_beta_21*(mu_1*(1-mu_1))^2)+((mu_21-mu_1)/(mu_1*(1-mu_1)))^2) +
-                 (pi_20/2)*(mu_20*(1-mu_20)/(expit_beta_20*(mu_0*(1-mu_0))^2)+((mu_20-mu_0)/(mu_0*(1-mu_0)))^2)
+      eta_IPRW <- (pi_11/kappa)*(mu_11*(1-mu_11)/(expit_beta_11*(mu_1*(1-mu_1))^2)+((mu_11-mu_1)/(mu_1*(1-mu_1)))^2) +
+                  (pi_10/(1-kappa))*(mu_10*(1-mu_10)/(expit_beta_10*(mu_0*(1-mu_0))^2)+((mu_10-mu_0)/(mu_0*(1-mu_0)))^2) +
+                  (pi_21/kappa)*(mu_21*(1-mu_21)/(expit_beta_21*(mu_1*(1-mu_1))^2)+((mu_21-mu_1)/(mu_1*(1-mu_1)))^2) +
+                  (pi_20/(1-kappa))*(mu_20*(1-mu_20)/(expit_beta_20*(mu_0*(1-mu_0))^2)+((mu_20-mu_0)/(mu_0*(1-mu_0)))^2)
       if (!is.null(delta)) {
-        sigma_y_sq <- (1/(mu_1*(1-mu_1))+1/(mu_0*(1-mu_0)))/2
-        eta_IPW <- eta_IPW + (m-1)*delta*sigma_y_sq
+        sigma_y_sq <- 1/(kappa*mu_1*(1-mu_1))+1/((1-kappa)*mu_0*(1-mu_0))
+        eta_IPRW <- eta_IPRW + (m-1)*delta*sigma_y_sq
       }
-      n_IPW <- 4*eta_IPW*(qnorm(power)+qnorm(1-alpha/2))^2/(qlogis(mu_1)-qlogis(mu_0))^2
+      n_IPRW <- eta_IPRW*(qnorm(power)+qnorm(1-alpha/2))^2/(qlogis(mu_1)-qlogis(mu_0))^2
     }
   }
-  return(n_IPW)
+  return(n_IPRW)
 }
 
-n_known_cat <- function(power,alpha,mu_1,mu_0,
+n_known_cat <- function(power,alpha,kappa,mu_1,mu_0,
                     mu_11,mu_10,mu_21,mu_20,
                     type,link,
                     sigma_11_sq=NULL,sigma_10_sq=NULL,sigma_21_sq=NULL,sigma_20_sq=NULL,
@@ -85,46 +85,46 @@ n_known_cat <- function(power,alpha,mu_1,mu_0,
                     delta=NULL,m=NULL)
 {
   if (type=="continuous" && link=="identity") {
-    eta_known <- (pi_11/2)*((sigma_11_sq+(mu_11-mu_1)^2)/expit_beta_11) +
-                 (pi_10/2)*((sigma_10_sq+(mu_10-mu_0)^2)/expit_beta_10) +
-                 (pi_21/2)*((sigma_21_sq+(mu_21-mu_1)^2)/expit_beta_21) +
-                 (pi_20/2)*((sigma_20_sq+(mu_20-mu_0)^2)/expit_beta_20) 
+    eta_known <- (pi_11/kappa)*((sigma_11_sq+(mu_11-mu_1)^2)/expit_beta_11) +
+                 (pi_10/(1-kappa))*((sigma_10_sq+(mu_10-mu_0)^2)/expit_beta_10) +
+                 (pi_21/kappa)*((sigma_21_sq+(mu_21-mu_1)^2)/expit_beta_21) +
+                 (pi_20/(1-kappa))*((sigma_20_sq+(mu_20-mu_0)^2)/expit_beta_20) 
     if (!is.null(delta)) {
-      sigma_y_sq <- (pi_11*(sigma_11_sq+(mu_11-mu_1)^2)+pi_21*(sigma_21_sq+(mu_21-mu_1)^2) +
-                       pi_10*(sigma_10_sq+(mu_10-mu_0)^2)+pi_20*(sigma_20_sq+(mu_20-mu_0)^2))/2 
-      eta_known <- eta_known + (m-1)*delta*sigma_y_sq
+      sigma_y_sq <- (pi_11*(sigma_11_sq+(mu_11-mu_1)^2)+pi_21*(sigma_21_sq+(mu_21-mu_1)^2))*kappa +
+                    (pi_10*(sigma_10_sq+(mu_10-mu_0)^2)+pi_20*(sigma_20_sq+(mu_20-mu_0)^2))*(1-kappa)
+      eta_known <- eta_known + (m-1)*delta*sigma_y_sq/(kappa*(1-kappa))
     }
-    n_known <- 4*eta_known*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
+    n_known <- eta_known*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
   }
   if (type=="binary") {
     if (!is.null(sigma_11_sq)) {print("sigma_sq variables should not be specified when type is binary")}
     if (link=="identity") {
-      eta_known <- (pi_11/2)*((mu_11*(1-mu_11)+(mu_11-mu_1)^2)/expit_beta_11) +
-                   (pi_10/2)*((mu_10*(1-mu_10)+(mu_10-mu_0)^2)/expit_beta_10) +
-                   (pi_21/2)*((mu_21*(1-mu_21)+(mu_21-mu_1)^2)/expit_beta_21) +
-                   (pi_20/2)*((mu_20*(1-mu_20)+(mu_20-mu_0)^2)/expit_beta_20) 
+      eta_known <- (pi_11/kappa)*((mu_11*(1-mu_11)+(mu_11-mu_1)^2)/expit_beta_11) +
+                   (pi_10/(1-kappa))*((mu_10*(1-mu_10)+(mu_10-mu_0)^2)/expit_beta_10) +
+                   (pi_21/kappa)*((mu_21*(1-mu_21)+(mu_21-mu_1)^2)/expit_beta_21) +
+                   (pi_20/(1-kappa))*((mu_20*(1-mu_20)+(mu_20-mu_0)^2)/expit_beta_20) 
       if (!is.null(delta)) {
-        sigma_y_sq <- (mu_1*(1-mu_1)+mu_0*(1-mu_0))/2
+        sigma_y_sq <- mu_1*(1-mu_1)/kappa+mu_0*(1-mu_0)/(1-kappa)
         eta_known <- eta_known + (m-1)*delta*sigma_y_sq
       }
-      n_known <- 4*eta_known*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
+      n_known <- eta_known*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
     }
     if (link=="logit") {
-      eta_known <- (pi_11/2)*((mu_11*(1-mu_11)+(mu_11-mu_1)^2)/(expit_beta_11*(mu_1*(1-mu_1))^2)) +
-                   (pi_10/2)*((mu_10*(1-mu_10)+(mu_10-mu_0)^2)/(expit_beta_10*(mu_0*(1-mu_0))^2)) +
-                   (pi_21/2)*((mu_21*(1-mu_21)+(mu_21-mu_1)^2)/(expit_beta_21*(mu_1*(1-mu_1))^2)) +
-                   (pi_20/2)*((mu_20*(1-mu_20)+(mu_20-mu_0)^2)/(expit_beta_20*(mu_0*(1-mu_0))^2))
+      eta_known <- (pi_11/kappa)*((mu_11*(1-mu_11)+(mu_11-mu_1)^2)/(expit_beta_11*(mu_1*(1-mu_1))^2)) +
+                   (pi_10/(1-kappa))*((mu_10*(1-mu_10)+(mu_10-mu_0)^2)/(expit_beta_10*(mu_0*(1-mu_0))^2)) +
+                   (pi_21/kappa)*((mu_21*(1-mu_21)+(mu_21-mu_1)^2)/(expit_beta_21*(mu_1*(1-mu_1))^2)) +
+                   (pi_20/(1-kappa))*((mu_20*(1-mu_20)+(mu_20-mu_0)^2)/(expit_beta_20*(mu_0*(1-mu_0))^2))
       if (!is.null(delta)) {
-        sigma_y_sq <- (1/(mu_1*(1-mu_1))+1/(mu_0*(1-mu_0)))/2
+        sigma_y_sq <- 1/(kappa*mu_1*(1-mu_1))+1/((1-kappa)*mu_0*(1-mu_0))
         eta_known <- eta_known + (m-1)*delta*sigma_y_sq
       }
-      n_known <- 4*eta_known*(qnorm(power)+qnorm(1-alpha/2))^2/(qlogis(mu_1)-qlogis(mu_0))^2
+      n_known <- eta_known*(qnorm(power)+qnorm(1-alpha/2))^2/(qlogis(mu_1)-qlogis(mu_0))^2
     }
   }
   return(n_known)
 }
 
-n_approx_cat <- function(power,alpha,mu_1,mu_0,
+n_approx_cat <- function(power,alpha,kappa,mu_1,mu_0,
                      type,link,
                      sigma_y_sq=NULL,
                      pi_11,pi_21,pi_10,pi_20,
@@ -132,45 +132,45 @@ n_approx_cat <- function(power,alpha,mu_1,mu_0,
                      delta=NULL,m=NULL)
 {
   if (type=="continuous" && link=="identity") {
-    eta_approx <- (pi_11/2)*(sigma_y_sq/expit_beta_11) +
-                  (pi_11/2)*(sigma_y_sq/expit_beta_10) +
-                  (pi_21/2)*(sigma_y_sq/expit_beta_21) +
-                  (pi_20/2)*(sigma_y_sq/expit_beta_20) 
+    eta_approx <- (pi_11/kappa)*(sigma_y_sq/expit_beta_11) +
+                  (pi_10/(1-kappa))*(sigma_y_sq/expit_beta_10) +
+                  (pi_21/kappa)*(sigma_y_sq/expit_beta_21) +
+                  (pi_20/(1-kappa))*(sigma_y_sq/expit_beta_20) 
     if (!is.null(delta)) {
-      eta_approx <- eta_approx + (m-1)*delta*sigma_y_sq
+      eta_approx <- eta_approx + (m-1)*delta*sigma_y_sq/(kappa*(1-kappa))
     }
-    n_approx <- 4*eta_approx*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
+    n_approx <- eta_approx*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
   }
   if (type=="binary") {
     if (!is.null(sigma_y_sq)) {print("sigma_y_sq should not be specified when type is binary")}
     if (link=="identity") {
-      eta_approx <- (pi_11/2)*(mu_1*(1-mu_1)/expit_beta_11) +
-                    (pi_10/2)*(mu_0*(1-mu_0)/expit_beta_10) +
-                    (pi_21/2)*(mu_1*(1-mu_1)/expit_beta_21) +
-                    (pi_20/2)*(mu_0*(1-mu_0)/expit_beta_20) 
+      eta_approx <- (pi_11/kappa)*(mu_1*(1-mu_1)/expit_beta_11) +
+                    (pi_10/(1-kappa))*(mu_0*(1-mu_0)/expit_beta_10) +
+                    (pi_21/kappa)*(mu_1*(1-mu_1)/expit_beta_21) +
+                    (pi_20/(1-kappa))*(mu_0*(1-mu_0)/expit_beta_20) 
       if (!is.null(delta)) {
-        sigma_y_sq <- (mu_1*(1-mu_1)+mu_0*(1-mu_0))/2
+        sigma_y_sq <- mu_1*(1-mu_1)/kappa+mu_0*(1-mu_0)/(1-kappa)
         eta_approx <- eta_approx + (m-1)*delta*sigma_y_sq
       }
-      n_approx <- 4*eta_approx*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
+      n_approx <- eta_approx*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
     }
     if (link=="logit") {
-      eta_approx <- (pi_11/2)*((1/(mu_1*(1-mu_1)))/expit_beta_11) + 
-                    (pi_10/2)*((1/(mu_0*(1-mu_0)))/expit_beta_10) +
-                    (pi_21/2)*((1/(mu_1*(1-mu_1)))/expit_beta_21) + 
-                    (pi_20/2)*((1/(mu_0*(1-mu_0)))/expit_beta_20)
+      eta_approx <- (pi_11/kappa)*((1/(mu_1*(1-mu_1)))/expit_beta_11) + 
+                    (pi_10/(1-kappa))*((1/(mu_0*(1-mu_0)))/expit_beta_10) +
+                    (pi_21/kappa)*((1/(mu_1*(1-mu_1)))/expit_beta_21) + 
+                    (pi_20/(1-kappa))*((1/(mu_0*(1-mu_0)))/expit_beta_20)
       if (!is.null(delta)) {
-        sigma_y_sq <- (1/(mu_1*(1-mu_1))+1/(mu_0*(1-mu_0)))/2
+        sigma_y_sq <- 1/(kappa*mu_1*(1-mu_1))+1/((1-kappa)*mu_0*(1-mu_0))
         eta_approx <- eta_approx + (m-1)*delta*sigma_y_sq
       }
-      n_approx <- 4*eta_approx*(qnorm(power)+qnorm(1-alpha/2))^2/(qlogis(mu_1)-qlogis(mu_0))^2
+      n_approx <- eta_approx*(qnorm(power)+qnorm(1-alpha/2))^2/(qlogis(mu_1)-qlogis(mu_0))^2
     }
   }
   return(n_approx)
 }
 
 # Weighting for a fully observed auxiliary continuous variable
-n_IPW_cont <- function(power,alpha,mu_1,mu_0,
+n_IPRW_cont <- function(power,alpha,kappa,mu_1,mu_0,
                        mu_x,sigma_x_sq,sigma_y_sq,rho,
                        beta_11,beta_01,beta_10,beta_00,
                        delta=NULL,m=NULL)
@@ -194,41 +194,41 @@ n_IPW_cont <- function(power,alpha,mu_1,mu_0,
                   sum(plogis(beta_00+beta_01*(sqrt(2*sigma_x_sq)*x_j+mu_x))*(1-plogis(beta_00+beta_01*(sqrt(2*sigma_x_sq)*x_j+mu_x)))*(sqrt(2*sigma_x_sq)*x_j+mu_x)),
                   sum(plogis(beta_00+beta_01*(sqrt(2*sigma_x_sq)*x_j+mu_x))*(1-plogis(beta_00+beta_01*(sqrt(2*sigma_x_sq)*x_j+mu_x)))*(sqrt(2*sigma_x_sq)*x_j+mu_x)^2)),
                 byrow=T,ncol=2,nrow=2)
-  eta_IPW <- sigma_y_sq*(1+exp(-mu_x*beta_11+beta_11^2*sigma_x_sq/2-beta_01)*(1+rho^2*sigma_x_sq*beta_11^2)/2+
-                           exp(-mu_x*beta_10+beta_10^2*sigma_x_sq/2-beta_00)*(1+rho^2*sigma_x_sq*beta_10^2)/2-
-                           rho^2*t(C_1)%*%solve(D_1)%*%C_1/2 - rho^2*t(C_0)%*%solve(D_0)%*%C_0/2) 
+  eta_IPRW <- sigma_y_sq*(1/kappa+exp(-mu_x*beta_11+beta_11^2*sigma_x_sq/2-beta_01)*(1+rho^2*sigma_x_sq*beta_11^2)/kappa+
+                          1/(1-kappa)+exp(-mu_x*beta_10+beta_10^2*sigma_x_sq/2-beta_00)*(1+rho^2*sigma_x_sq*beta_10^2)/(1-kappa)-
+                            rho^2*t(C_1)%*%solve(D_1)%*%C_1/kappa - rho^2*t(C_0)%*%solve(D_0)%*%C_0/(1-kappa)) 
   if (!is.null(delta)) {
-    eta_IPW <- eta_IPW + (m-1)*delta*sigma_y_sq
+    eta_IPRW <- eta_IPRW + (m-1)*delta*sigma_y_sq/(kappa*(1-kappa))
   }
-  n_IPW <- 4*eta_IPW*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
-  return(n_IPW)
+  n_IPRW <- eta_IPRW*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
+  return(n_IPRW)
 }
 
-n_known_cont <- function(power,alpha,mu_1,mu_0,
+n_known_cont <- function(power,alpha,kappa,mu_1,mu_0,
                     mu_x,sigma_x_sq,sigma_y_sq,rho,
                     beta_11,beta_01,beta_10,beta_00,
                     delta=NULL,m=NULL)
 {
-  eta_known <- sigma_y_sq*(1+exp(-mu_x*beta_11^2+beta_11^2*sigma_x_sq/2-beta_01)*(1+rho^2*sigma_x_sq*beta_11^2)/2+
-                             exp(-mu_x*beta_10^2+beta_10^2*sigma_x_sq/2-beta_00)*(1+rho^2*sigma_x_sq*beta_10^2)/2)
+  eta_known <- sigma_y_sq*(1/kappa+exp(-mu_x*beta_11^2+beta_11^2*sigma_x_sq/2-beta_01)*(1+rho^2*sigma_x_sq*beta_11^2)/kappa+
+                           1/(1-kappa)+exp(-mu_x*beta_10^2+beta_10^2*sigma_x_sq/2-beta_00)*(1+rho^2*sigma_x_sq*beta_10^2)/(1-kappa))
   if (!is.null(delta)) {
-    eta_known <- eta_known + (m-1)*delta*sigma_y_sq
+    eta_known <- eta_known + (m-1)*delta*sigma_y_sq/(kappa*(1-kappa))
   }
-  n_known <- 4*eta_known*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
+  n_known <- eta_known*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
   return(n_known)
 }
 
-n_approx_cont <- function(power,alpha,mu_1,mu_0,
+n_approx_cont <- function(power,alpha,kappa,mu_1,mu_0,
                      mu_x,sigma_x_sq,sigma_y_sq,
                      beta_11,beta_01,beta_10,beta_00,
                      delta=NULL,m=NULL)
 {
-  eta_approx <- sigma_y_sq*(1+exp(-mu_x*beta_11^2+beta_11^2*sigma_x_sq/2-beta_01)/2+
-                              exp(-mu_x*beta_10^2+beta_10^2*sigma_x_sq/2-beta_00)/2)
+  eta_approx <- sigma_y_sq*(1/kappa+exp(-mu_x*beta_11^2+beta_11^2*sigma_x_sq/2-beta_01)/kappa+
+                            1/(1-kappa)+exp(-mu_x*beta_10^2+beta_10^2*sigma_x_sq/2-beta_00)/(1-kappa))
   if (!is.null(delta)) {
-    eta_approx <- eta_approx + (m-1)*delta*sigma_y_sq
+    eta_approx <- eta_approx + (m-1)*delta*sigma_y_sq/(kappa*(1-kappa))
   }
-  n_approx <- 4*eta_approx*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
+  n_approx <- eta_approx*(qnorm(power)+qnorm(1-alpha/2))^2/(mu_1-mu_0)^2
   return(n_approx)
 }
 
@@ -236,7 +236,7 @@ n_approx_cont <- function(power,alpha,mu_1,mu_0,
 # Simulation functions
 
 # Weighting for a fully observed auxiliary categorical variable
-sim_power_cat <- function(rep,n_standard,n_ipw,type,link,
+sim_power_cat <- function(rep,n_standard,n_IPRW,type,link,
                       mu_11,mu_21,mu_10,mu_20,
                       sigma_11_sq,sigma_12_sq,sigma_01_sq,sigma_02_sq,
                       expit_beta_11,expit_beta_12,expit_beta_01,expit_beta_02,
@@ -345,9 +345,9 @@ sim_power_cat <- function(rep,n_standard,n_ipw,type,link,
     }
     wald_eqn3 <- est_eqn3/sqrt(var_eqn3)
     reject_eqn3 <- wald_eqn3>qnorm(0.975)
-    # n_ipw
-    Z <- c(rep(0,n_ipw/2),rep(1,n_ipw/2))
-    X <- rbinom(n_ipw,1,0.5)+1
+    # n_IPRW
+    Z <- c(rep(0,n_IPRW/2),rep(1,n_IPRW/2))
+    X <- rbinom(n_IPRW,1,0.5)+1
     R <- NULL
     R[Z==1 & X==1] <- rbinom(sum(Z==1 & X==1),1,expit_beta_11)
     R[Z==1 & X==2] <- rbinom(sum(Z==1 & X==2),1,expit_beta_12)
@@ -368,16 +368,16 @@ sim_power_cat <- function(rep,n_standard,n_ipw,type,link,
     }
     if (type=="continuous" && !is.null(delta)) {
       K <- NULL
-      K[Z==0] <- rep(seq(1,ceiling((n_ipw/2)/m)),each=m)[1:(n_ipw/2)]
-      K[Z==1] <- rep(seq(1,ceiling((n_ipw/2)/m)),each=m)[1:(n_ipw/2)] + ceiling((n_ipw/2)/m)
+      K[Z==0] <- rep(seq(1,ceiling((n_IPRW/2)/m)),each=m)[1:(n_IPRW/2)]
+      K[Z==1] <- rep(seq(1,ceiling((n_IPRW/2)/m)),each=m)[1:(n_IPRW/2)] + ceiling((n_IPRW/2)/m)
       mu_1 <- (mu_11+mu_21)/2
       mu_0 <- (mu_10+mu_20)/2
       sigma_y_sq <- (0.5*(sigma_11_sq+(mu_11-mu_1)^2)+0.5*(sigma_12_sq+(mu_21-mu_1)^2) +
                        0.5*(sigma_01_sq+(mu_10-mu_0)^2)+0.5*(sigma_02_sq+(mu_20-mu_0)^2))/2 
-      cluster_effect <- rnorm(ceiling((n_ipw/2)/m)*2,0,sqrt(delta*sigma_y_sq))
+      cluster_effect <- rnorm(ceiling((n_IPRW/2)/m)*2,0,sqrt(delta*sigma_y_sq))
       zeta <- NULL
-      zeta[Z==0] <- rep(cluster_effect[1:ceiling((n_ipw/2)/m)],each=m)[1:(n_ipw/2)]
-      zeta[Z==1] <- rep(cluster_effect[(ceiling((n_ipw/2)/m)+1):(ceiling((n_ipw/2)/m)*2)],each=m)[1:(n_ipw/2)]
+      zeta[Z==0] <- rep(cluster_effect[1:ceiling((n_IPRW/2)/m)],each=m)[1:(n_IPRW/2)]
+      zeta[Z==1] <- rep(cluster_effect[(ceiling((n_IPRW/2)/m)+1):(ceiling((n_IPRW/2)/m)*2)],each=m)[1:(n_IPRW/2)]
       Y[Z==1 & X==1] <- rnorm(sum(Z==1 & X==1),mu_11,sqrt(sigma_11_sq-delta*sigma_y_sq)) + zeta[Z==1 & X==1] 
       Y[Z==1 & X==2] <- rnorm(sum(Z==1 & X==2),mu_21,sqrt(sigma_12_sq-delta*sigma_y_sq)) + zeta[Z==1 & X==2] 
       Y[Z==0 & X==1] <- rnorm(sum(Z==0 & X==1),mu_10,sqrt(sigma_01_sq-delta*sigma_y_sq)) + zeta[Z==0 & X==1] 
@@ -386,14 +386,14 @@ sim_power_cat <- function(rep,n_standard,n_ipw,type,link,
     # method of Qaqish, Biometrika 2003
     if (type=="binary" && !is.null(delta)) {
       K <- NULL
-      K[Z==0] <- rep(seq(1,ceiling((n_ipw/2)/m)),each=m)[1:(n_ipw/2)]
-      K[Z==1] <- rep(seq(1,ceiling((n_ipw/2)/m)),each=m)[1:(n_ipw/2)] + ceiling((n_ipw/2)/m)
+      K[Z==0] <- rep(seq(1,ceiling((n_IPRW/2)/m)),each=m)[1:(n_IPRW/2)]
+      K[Z==1] <- rep(seq(1,ceiling((n_IPRW/2)/m)),each=m)[1:(n_IPRW/2)] + ceiling((n_IPRW/2)/m)
       mu_vec <- NULL
       mu_vec[Z==1 & X==1] <- mu_11
       mu_vec[Z==1 & X==2] <- mu_21
       mu_vec[Z==0 & X==1] <- mu_10
       mu_vec[Z==0 & X==2] <- mu_20 
-      for (k in 1:(ceiling((n_ipw/2)/m)*2)) {
+      for (k in 1:(ceiling((n_IPRW/2)/m)*2)) {
         mu_k <- mu_vec[K==k]
         Y_k <- NULL
         Y_k[1] <- rbinom(1,1,mu_k[1]) 
@@ -425,12 +425,12 @@ sim_power_cat <- function(rep,n_standard,n_ipw,type,link,
     if (link=="identity" && is.null(delta)) {
       est_eqn4 <- mu_hat_1_eqn4 - mu_hat_0_eqn4
       A_hat <- matrix(
-        c(sum(R*Z/e)/n_ipw,0,sum(R*Z*(Y-mu_hat_1_eqn4)*(1-e)*X1/e)/n_ipw,sum(R*Z*(Y-mu_hat_1_eqn4)*(1-e)*X2/e)/n_ipw,0,0,
-          0,sum(R*(1-Z)/e)/n_ipw,0,0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(1-e)*X1/e)/n_ipw,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(1-e)*X2/e)/n_ipw,
-          0,0,sum(Z*e*(1-e)*X1)/n_ipw,0,0,0,
-          0,0,0,sum(Z*e*(1-e)*X2)/n_ipw,0,0,
-          0,0,0,0,sum((1-Z)*e*(1-e)*X1)/n_ipw,0,
-          0,0,0,0,0,sum((1-Z)*e*(1-e)*X2)/n_ipw),
+        c(sum(R*Z/e)/n_IPRW,0,sum(R*Z*(Y-mu_hat_1_eqn4)*(1-e)*X1/e)/n_IPRW,sum(R*Z*(Y-mu_hat_1_eqn4)*(1-e)*X2/e)/n_IPRW,0,0,
+          0,sum(R*(1-Z)/e)/n_IPRW,0,0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(1-e)*X1/e)/n_IPRW,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(1-e)*X2/e)/n_IPRW,
+          0,0,sum(Z*e*(1-e)*X1)/n_IPRW,0,0,0,
+          0,0,0,sum(Z*e*(1-e)*X2)/n_IPRW,0,0,
+          0,0,0,0,sum((1-Z)*e*(1-e)*X1)/n_IPRW,0,
+          0,0,0,0,0,sum((1-Z)*e*(1-e)*X2)/n_IPRW),
         nrow=6,ncol=6,byrow=T)
       B_comp <- matrix(c(sum(R*Z*(Y-mu_hat_1_eqn4)^2/(e^2)),0,sum(R*Z*(Y-mu_hat_1_eqn4)*(R-e)*X1/e),sum(R*Z*(Y-mu_hat_1_eqn4)*(R-e)*X2/e),0,0,
                          0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)^2/(e^2)),0,0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(R-e)*X1/e),sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(R-e)*X2/e),
@@ -439,19 +439,19 @@ sim_power_cat <- function(rep,n_standard,n_ipw,type,link,
                          0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(R-e)*X1/e),0,0,sum((1-Z)*(R-e)^2*X1),0,
                          0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(R-e)*X2/e),0,0,0,sum((1-Z)*(R-e)^2*X2)),
                        nrow=6,ncol=6,byrow=T)
-      B_hat <- B_comp/n_ipw
+      B_hat <- B_comp/n_IPRW
       var_comp <- solve(A_hat) %*% B_hat %*% t(solve(A_hat))
-      var_eqn4 <- (var_comp[1,1] + var_comp[2,2])/n_ipw
+      var_eqn4 <- (var_comp[1,1] + var_comp[2,2])/n_IPRW
     }
     if (link=="logit" && is.null(delta)) {
       est_eqn4 <- qlogis(mu_hat_1_eqn4) - qlogis(mu_hat_0_eqn4)
       A_hat <- matrix(
-        c(sum(R*Z*mu_hat_1_eqn4*(1-mu_hat_1_eqn4)/e)/n_ipw,0,sum(R*Z*(Y-mu_hat_1_eqn4)*(1-e)*X1/e)/n_ipw,sum(R*Z*(Y-mu_hat_1_eqn4)*(1-e)*X2/e)/n_ipw,0,0,
-          0,sum(R*(1-Z)*mu_hat_0_eqn4*(1-mu_hat_0_eqn4)/e)/n_ipw,0,0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(1-e)*X1/e)/n_ipw,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(1-e)*X2/e)/n_ipw,
-          0,0,sum(Z*e*(1-e)*X1)/n_ipw,0,0,0,
-          0,0,0,sum(Z*e*(1-e)*X2)/n_ipw,0,0,
-          0,0,0,0,sum((1-Z)*e*(1-e)*X1)/n_ipw,0,
-          0,0,0,0,0,sum((1-Z)*e*(1-e)*X2)/n_ipw),
+        c(sum(R*Z*mu_hat_1_eqn4*(1-mu_hat_1_eqn4)/e)/n_IPRW,0,sum(R*Z*(Y-mu_hat_1_eqn4)*(1-e)*X1/e)/n_IPRW,sum(R*Z*(Y-mu_hat_1_eqn4)*(1-e)*X2/e)/n_IPRW,0,0,
+          0,sum(R*(1-Z)*mu_hat_0_eqn4*(1-mu_hat_0_eqn4)/e)/n_IPRW,0,0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(1-e)*X1/e)/n_IPRW,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(1-e)*X2/e)/n_IPRW,
+          0,0,sum(Z*e*(1-e)*X1)/n_IPRW,0,0,0,
+          0,0,0,sum(Z*e*(1-e)*X2)/n_IPRW,0,0,
+          0,0,0,0,sum((1-Z)*e*(1-e)*X1)/n_IPRW,0,
+          0,0,0,0,0,sum((1-Z)*e*(1-e)*X2)/n_IPRW),
         nrow=6,ncol=6,byrow=T)
       B_comp <- matrix(c(sum(R*Z*(Y-mu_hat_1_eqn4)^2/(e^2)),0,sum(R*Z*(Y-mu_hat_1_eqn4)*(R-e)*X1/e),sum(R*Z*(Y-mu_hat_1_eqn4)*(R-e)*X2/e),0,0,
                          0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)^2/(e^2)),0,0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(R-e)*X1/e),sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(R-e)*X2/e),
@@ -460,9 +460,9 @@ sim_power_cat <- function(rep,n_standard,n_ipw,type,link,
                          0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(R-e)*X1/e),0,0,sum((1-Z)*(R-e)^2*X1),0,
                          0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(R-e)*X2/e),0,0,0,sum((1-Z)*(R-e)^2*X2)),
                        nrow=6,ncol=6,byrow=T)
-      B_hat <- B_comp/n_ipw
+      B_hat <- B_comp/n_IPRW
       var_comp <- solve(A_hat) %*% B_hat %*% t(solve(A_hat))
-      var_eqn4 <- (var_comp[1,1] + var_comp[2,2])/n_ipw
+      var_eqn4 <- (var_comp[1,1] + var_comp[2,2])/n_IPRW
     }
     if (link=="identity" && !is.null(delta)) {
       est_eqn4 <- mu_hat_1_eqn4 - mu_hat_0_eqn4
@@ -525,7 +525,7 @@ sim_power_cat <- function(rep,n_standard,n_ipw,type,link,
 }
 
 # Weighting for a fully observed auxiliary continuous variable
-sim_power_cont <- function(rep,n_standard,n_ipw,n_known,
+sim_power_cont <- function(rep,n_standard,n_IPRW,n_known,
                       mu_1,mu_0,mu_x,
                       sigma_x_sq,sigma_y_sq,rho,
                       beta_11,beta_01,beta_10,beta_00,
@@ -574,9 +574,9 @@ sim_power_cont <- function(rep,n_standard,n_ipw,n_known,
     }
     wald_eqn3 <- est_eqn3/sqrt(var_eqn3)
     reject_eqn3 <- wald_eqn3>qnorm(0.975)
-    # n_ipw
-    Z <- c(rep(0,n_ipw/2),rep(1,n_ipw/2))
-    X <- rnorm(n_ipw,0,1)
+    # n_IPRW
+    Z <- c(rep(0,n_IPRW/2),rep(1,n_IPRW/2))
+    X <- rnorm(n_IPRW,0,1)
     R <- NULL
     R[Z==1] <- rbinom(sum(Z==1),1,plogis(beta_01+beta_11*X[Z==1]))
     R[Z==0] <- rbinom(sum(Z==0),1,plogis(beta_00+beta_10*X[Z==0]))
@@ -587,12 +587,12 @@ sim_power_cont <- function(rep,n_standard,n_ipw,n_known,
     }
     if (!is.null(delta)) {
       K <- NULL
-      K[Z==0] <- rep(seq(1,ceiling((n_ipw/2)/m)),each=m)[1:(n_ipw/2)]
-      K[Z==1] <- rep(seq(1,ceiling((n_ipw/2)/m)),each=m)[1:(n_ipw/2)] + ceiling((n_ipw/2)/m)
-      cluster_effect <- rnorm(ceiling((n_ipw/2)/m)*2,0,sqrt(delta*sigma_y_sq))
+      K[Z==0] <- rep(seq(1,ceiling((n_IPRW/2)/m)),each=m)[1:(n_IPRW/2)]
+      K[Z==1] <- rep(seq(1,ceiling((n_IPRW/2)/m)),each=m)[1:(n_IPRW/2)] + ceiling((n_IPRW/2)/m)
+      cluster_effect <- rnorm(ceiling((n_IPRW/2)/m)*2,0,sqrt(delta*sigma_y_sq))
       zeta <- NULL
-      zeta[Z==0] <- rep(cluster_effect[1:ceiling((n_ipw/2)/m)],each=m)[1:(n_ipw/2)]
-      zeta[Z==1] <- rep(cluster_effect[(ceiling((n_ipw/2)/m)+1):(ceiling((n_ipw/2)/m)*2)],each=m)[1:(n_ipw/2)]
+      zeta[Z==0] <- rep(cluster_effect[1:ceiling((n_IPRW/2)/m)],each=m)[1:(n_IPRW/2)]
+      zeta[Z==1] <- rep(cluster_effect[(ceiling((n_IPRW/2)/m)+1):(ceiling((n_IPRW/2)/m)*2)],each=m)[1:(n_IPRW/2)]
       Y[Z==1] <- rnorm(sum(Z==1),mu_1+rho*sqrt(sigma_y_sq)*X[Z==1],sqrt(sigma_y_sq*(1-delta-rho^2))) + zeta[Z==1] 
       Y[Z==0] <- rnorm(sum(Z==0),mu_0+rho*sqrt(sigma_y_sq)*X[Z==0],sqrt(sigma_y_sq*(1-delta-rho^2))) + zeta[Z==0] 
     }
@@ -607,12 +607,12 @@ sim_power_cont <- function(rep,n_standard,n_ipw,n_known,
     est_eqn4 <- mu_hat_1_eqn4 - mu_hat_0_eqn4 
     if (is.null(delta)) {
       A_hat <- matrix(
-        c(sum(R*Z/e)/n_ipw,0,sum(R*Z*(Y-mu_hat_1_eqn4)*(1-e)/e)/n_ipw,sum(R*Z*(Y-mu_hat_1_eqn4)*(1-e)*X/e)/n_ipw,0,0,
-          0,sum(R*(1-Z)/e)/n_ipw,0,0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(1-e)/e)/n_ipw,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(1-e)*X/e)/n_ipw,
-          0,0,sum(Z*e*(1-e))/n_ipw,sum(Z*e*(1-e)*X)/n_ipw,0,0,
-          0,0,sum(Z*e*(1-e)*X)/n_ipw,sum(Z*e*(1-e)*X^2)/n_ipw,0,0,
-          0,0,0,0,sum((1-Z)*e*(1-e))/n_ipw,sum((1-Z)*e*(1-e)*X)/n_ipw,
-          0,0,0,0,sum((1-Z)*e*(1-e)*X)/n_ipw,sum((1-Z)*e*(1-e)*X^2)/n_ipw),
+        c(sum(R*Z/e)/n_IPRW,0,sum(R*Z*(Y-mu_hat_1_eqn4)*(1-e)/e)/n_IPRW,sum(R*Z*(Y-mu_hat_1_eqn4)*(1-e)*X/e)/n_IPRW,0,0,
+          0,sum(R*(1-Z)/e)/n_IPRW,0,0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(1-e)/e)/n_IPRW,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(1-e)*X/e)/n_IPRW,
+          0,0,sum(Z*e*(1-e))/n_IPRW,sum(Z*e*(1-e)*X)/n_IPRW,0,0,
+          0,0,sum(Z*e*(1-e)*X)/n_IPRW,sum(Z*e*(1-e)*X^2)/n_IPRW,0,0,
+          0,0,0,0,sum((1-Z)*e*(1-e))/n_IPRW,sum((1-Z)*e*(1-e)*X)/n_IPRW,
+          0,0,0,0,sum((1-Z)*e*(1-e)*X)/n_IPRW,sum((1-Z)*e*(1-e)*X^2)/n_IPRW),
         nrow=6,ncol=6,byrow=T)
       B_comp <- matrix(c(sum(R*Z*(Y-mu_hat_1_eqn4)^2/(e^2)),0,sum(R*Z*(Y-mu_hat_1_eqn4)*(R-e)/e),sum(R*Z*(Y-mu_hat_1_eqn4)*(R-e)*X/e),0,0,
                            0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)^2/(e^2)),0,0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(R-e)/e),sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(R-e)*X/e),
@@ -621,9 +621,9 @@ sim_power_cont <- function(rep,n_standard,n_ipw,n_known,
                            0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(R-e)/e),0,0,sum((1-Z)*(R-e)^2),sum((1-Z)*(R-e)^2*X),
                            0,sum(R*(1-Z)*(Y-mu_hat_0_eqn4)*(R-e)*X/e),0,0,sum((1-Z)*(R-e)^2*X),sum((1-Z)*(R-e)^2*X^2)),
                          nrow=6,ncol=6,byrow=T)
-      B_hat <- B_comp/n_ipw
+      B_hat <- B_comp/n_IPRW
       var_comp <- solve(A_hat) %*% B_hat %*% t(solve(A_hat))
-      var_eqn4 <- (var_comp[1,1] + var_comp[2,2])/n_ipw
+      var_eqn4 <- (var_comp[1,1] + var_comp[2,2])/n_IPRW
     }
     if (!is.null(delta)) {
       A_C_hat <- matrix(
