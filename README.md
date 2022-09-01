@@ -11,7 +11,7 @@ Figure_2.R - Code to create Figure 2
 
 shinyFUNCTIONS.R - R functions used in R shiny app program
 
-Table_1.R - Simulations to reproduce Table 1
+Table_1.R - Simulations to produce Table 1
 
 Text_CRTs.R - Simulations to produce text about CRTs
 
