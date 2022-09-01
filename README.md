@@ -49,4 +49,4 @@ Web_Figure_13.R - Simulations to produce Web Figure 13
 
 Web_Figure_14.R - Simulations to produce Web Figure 14
 
-Web_Table_1.R - Simulations to produc Web Table 1
+Web_Table_1.R - Simulations to produce Web Table 1
