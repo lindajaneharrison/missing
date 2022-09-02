@@ -1,4 +1,4 @@
-# Web Figure 11 (Sample Size Calculation for Randomized Clinical Trials via Inverse Probability of Response Weighting
+# Web Table 1 (Sample Size Calculation for Randomized Clinical Trials via Inverse Probability of Response Weighting
 # when Outcome Data are Missing at Random)
 # Update with scenario re-labeling
 source('useFUNCTIONS.R')
@@ -470,7 +470,7 @@ fig_bin_logit_power_2 <- ggplot() +
   guides(color=guide_legend(override.aes = list(color=cbPalette, shape=nice.shapes)), shape=FALSE) +
   labs(x = TeX("$\\delta$"),y="power",color="") + ggtitle(TeX("$Y_i$ binary, $g$ logit")) + 
   theme(plot.title = element_text(size=10)) +
-  annotate("text", x = 0.06, y=100, label = "Scenario 1", size=3)
+  annotate("text", x = 0.06, y=100, label = "Scenario 2", size=3)
 fig_bin_logit_power_2
 
 

@@ -1,4 +1,4 @@
-# Web Figure 5 (Sample Size Calculation for Randomized Clinical Trials via Inverse Probability of Response Weighting 
+# Table 1 (Sample Size Calculation for Randomized Clinical Trials via Inverse Probability of Response Weighting 
 # when Outcome Data are Missing at Random)
 # Explore when get largest differences in sample sizes between formulas
 # and make applicable for CRTs scenarios (binary correlation constraints and var >0 in continuous simulations)
@@ -572,7 +572,7 @@ fig_bin_logit_power_2 <- ggplot() +
   guides(color=guide_legend(override.aes = list(color=cbPalette, shape=nice.shapes)), shape=FALSE) +
   labs(x = TeX("$n_{standard}$"),y="power",color="") + ggtitle(TeX("$Y_i$ binary, $g$ logit")) + 
   theme(plot.title = element_text(size=10)) +
-  annotate("text", x = 1250, y=105, label = "Scenario 1", size=3)
+  annotate("text", x = 1250, y=105, label = "Scenario 2", size=3)
 fig_bin_logit_power_2
 
 

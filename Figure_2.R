@@ -1,5 +1,4 @@
-# Figure 2 (Sample Size Calculation for Randomized Clinical Trials via Inverse Probability of Response Weighting 
-# when Outcome Data are Missing at Random)
+# Figure 2 (Sample Size Calculation for Randomized Clinical Trials when Outcome Data are Missing at Random)
 source('useFUNCTIONS.R')
 
 # Weighting for a fully observed auxiliary continuous variable
@@ -43,7 +42,7 @@ a_web <- ggplot() +
   geom_hline(data=df,aes(yintercept=n_approx_out,color="iii. approx",linetype="iii. approx")) +
   geom_hline(data=df,aes(yintercept=n_standard_out,color="iv. standard",linetype="iv. standard")) +
   scale_x_continuous(breaks=c(-0.9,-0.5,0,0.5,0.9)) + 
-  scale_y_continuous(limits=c(1025,2100),breaks=c(1200,1400,1600,1800,2000)) + 
+  scale_y_continuous(limits=c(1000,2100),breaks=c(1000,1200,1400,1600,1800,2000)) + 
   labs(x = TeX("$\\rho$"),y="n", color="",
        caption=TeX("$\\beta_{01}=1.4$, $\\beta_{11}=0.21$, $\\beta_{00}=1.45$, $\\beta_{10}=0.47$")) +
   theme(axis.title.y=element_text(angle = 0), plot.caption=element_text(size=6)) +
@@ -57,7 +56,7 @@ a <- ggplot() +
   geom_line(data=df,aes(x=rho,y=n_known_out,color="ii. known",linetype="ii. known")) +
   geom_hline(data=df,aes(yintercept=n_standard_out,color="iii. standard",linetype="iii. standard")) +
   scale_x_continuous(breaks=c(-0.9,-0.5,0,0.5,0.9)) + 
-  scale_y_continuous(limits=c(1025,2100),breaks=c(1200,1400,1600,1800,2000)) + 
+  scale_y_continuous(limits=c(1000,2100),breaks=c(1000,1200,1400,1600,1800,2000)) + 
   labs(x = TeX("$\\rho$"),y="n", color="",
        caption=TeX("$\\beta_{01}=1.4$, $\\beta_{11}=0.21$, $\\beta_{00}=1.45$, $\\beta_{10}=0.47$")) +
   theme(axis.title.y=element_text(angle = 0), plot.caption=element_text(size=6)) +
@@ -93,7 +92,7 @@ b_web <- ggplot() +
   geom_hline(data=df,aes(yintercept=n_approx_out,color="iii. approx",linetype="iii. approx")) +
   geom_hline(data=df,aes(yintercept=n_standard_out,color="iv. standard",linetype="iv. standard")) +
   scale_x_continuous(breaks=c(-0.9,-0.5,0,0.5,0.9)) + 
-  scale_y_continuous(limits=c(1025,2100),breaks=c(1200,1400,1600,1800,2000)) + 
+  scale_y_continuous(limits=c(1000,2100),breaks=c(1000,1200,1400,1600,1800,2000)) + 
   labs(x = TeX("$\\rho$"),y="n", color="",
        caption=TeX("$\\beta_{01}=1.4$, $\\beta_{11}=0.21$, $\\beta_{00}=2$, $\\beta_{10}=1.64$")) +
   theme(axis.title.y=element_text(angle = 0), plot.caption=element_text(size=6)) +
@@ -107,7 +106,7 @@ b <- ggplot() +
   geom_line(data=df,aes(x=rho,y=n_known_out,color="ii. known",linetype="ii. known")) +
   geom_hline(data=df,aes(yintercept=n_standard_out,color="iii. standard",linetype="iii. standard")) +
   scale_x_continuous(breaks=c(-0.9,-0.5,0,0.5,0.9)) + 
-  scale_y_continuous(limits=c(1025,2100),breaks=c(1200,1400,1600,1800,2000)) + 
+  scale_y_continuous(limits=c(1000,2100),breaks=c(1000, 1200,1400,1600,1800,2000)) + 
   labs(x = TeX("$\\rho$"),y="n", color="",
        caption=TeX("$\\beta_{01}=1.4$, $\\beta_{11}=0.21$, $\\beta_{00}=2$, $\\beta_{10}=1.64$")) +
   theme(axis.title.y=element_text(angle = 0), plot.caption=element_text(size=6)) +
