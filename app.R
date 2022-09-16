@@ -25,7 +25,7 @@ fluidPage(
   # Sidebar panel for inputs ----
   fluidRow(
     
-    # Input: Selector for variable to plot against mpg ----
+    # Input: Selector for variables ----
     column(4,
     sliderInput("power", 
                  "Power [\\(1-\\beta\\)]",
@@ -121,7 +121,7 @@ tabPanel("weighting by a continuous variable",
            # Sidebar panel for inputs ----
            fluidRow(
              
-             # Input: Selector for variable to plot against mpg ----
+             # Input: Selector for variables ----
              column(4,
                     sliderInput("power_cont", 
                                 "Power [\\(1-\\beta\\)]",
