@@ -9,6 +9,8 @@ Figure_1.R - Code to create Figure 1
 
 Figure_2.R - Code to create Figure 2
 
+Figure_3.R - Simulations to produce Figure 3
+
 shinyFUNCTIONS.R - R functions used in R shiny app program
 
 Table_1.R - Simulations to produce Table 1
@@ -46,7 +48,5 @@ Web_Figure_11.R - Simulations to produce Web Figure 11
 Web_Figure_12.R - Simulations to produce Web Figure 12
 
 Web_Figure_13.R - Simulations to produce Web Figure 13
-
-Web_Figure_14.R - Simulations to produce Web Figure 14
 
 Web_Table_1.R - Simulations to produce Web Table 1
